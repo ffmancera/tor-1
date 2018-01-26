@@ -10,17 +10,55 @@
  **/
 
 #include "crypto_rsa.h"
+#include "crypto.h"
+#include "compat_openssl.h"
+#include "crypto_curve25519.h"
+#include "crypto_ed25519.h"
+#include "crypto_format.h"
 
-/** A public key, or a public/private key-pair. */
-struct crypto_pk_t
+DISABLE_GCC_WARNING(redundant-decls)
+
+#include <openssl/err.h>
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
+#include <openssl/evp.h>
+#include <openssl/engine.h>
+#include <openssl/rand.h>
+#include <openssl/bn.h>
+#include <openssl/dh.h>
+#include <openssl/conf.h>
+#include <openssl/hmac.h>
+
+ENABLE_GCC_WARNING(redundant-decls)
+
+#include "torlog.h"
+#include "util.h"
+#include "util_format.h"
+
+/** Log all pending crypto errors at level <b>severity</b>.  Use
+ * <b>doing</b> to describe our current activities.
+ */
+static void
+crypto_log_errors(int severity, const char *doing)
 {
-  int refs; /**< reference count, so we don't have to copy keys */
-  RSA *key; /**< The key itself */
-};
+  unsigned long err;
+  const char *msg, *lib, *func;
+  while ((err = ERR_get_error()) != 0) {
+    msg = (const char*)ERR_reason_error_string(err);
+    lib = (const char*)ERR_lib_error_string(err);
+    func = (const char*)ERR_func_error_string(err);
+    if (!msg) msg = "(null)";
+    if (!lib) lib = "(null)";
+    if (!func) func = "(null)";
+    if (BUG(!doing)) doing = "(null)";
+    tor_log(severity, LD_CRYPTO, "crypto error while %s: %s (in %s:%s)",
+              doing, msg, lib, func);
+  }
+}
 
 /** Return the number of bytes added by padding method <b>padding</b>.
  */
-static inline int
+int
 crypto_get_rsa_padding_overhead(int padding)
 {
   switch (padding)
@@ -32,7 +70,7 @@ crypto_get_rsa_padding_overhead(int padding)
 
 /** Given a padding method <b>padding</b>, return the correct OpenSSL constant.
  */
-static inline int
+int
 crypto_get_rsa_padding(int padding)
 {
   switch (padding)

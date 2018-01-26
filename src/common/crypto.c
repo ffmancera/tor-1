@@ -28,6 +28,7 @@
 #include "crypto_curve25519.h"
 #include "crypto_ed25519.h"
 #include "crypto_format.h"
+#include "crypto_rsa.h"
 
 DISABLE_GCC_WARNING(redundant-decls)
 
