@@ -206,6 +206,7 @@ void dirserv_spool_remove_missing_and_guess_size(dir_connection_t *conn,
                                                  int *n_expired_out);
 void dirserv_spool_sort(dir_connection_t *conn);
 void dir_conn_clear_spool(dir_connection_t *conn);
+void clear_status_flags_on_sybil(routerstatus_t *rs);
 
 #endif /* !defined(TOR_DIRSERV_H) */
 

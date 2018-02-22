@@ -3390,6 +3390,36 @@ reset_routerstatus(routerstatus_t *rs,
 #define ROUTERSET_A_STR    ROUTER_A_ID_STR
 #define ROUTERSET_NONE_STR ""
 
+/** Check for every important routerstatus flag if it has been succesfully
+ * cleared */
+static void
+test_clear_status_flags_on_sybil(routerstatus_t *rs)
+{
+  memset(rs, 0xFF, sizeof(struct routerstatus_t));
+  clear_status_flags_on_sybil(rs);
+
+  tt_int_op(rs->is_possible_guard,OP_EQ, 0);
+  tt_int_op(rs->is_v2_dir,OP_EQ, 0);
+  tt_int_op(rs->is_hs_dir,OP_EQ, 0);
+  tt_int_op(rs->is_valid,OP_EQ, 0);
+  tt_int_op(rs->is_named,OP_EQ, 0);
+  tt_int_op(rs->is_flagged_running,OP_EQ, 0);
+  tt_int_op(rs->is_fast,OP_EQ, 0);
+  tt_int_op(rs->is_stable,OP_EQ, 0);
+  tt_int_op(rs->is_exit,OP_EQ, 0);
+  tt_int_op(rs->is_authority,OP_EQ, 0);
+  tt_int_op(rs->is_hs_dir,OP_EQ, 0);
+  tt_int_op(rs->has_bandwidth,OP_EQ, 0);
+  tt_int_op(rs->has_exitsummary,OP_EQ, 0);
+  tt_int_op(rs->bw_is_unmeasured,OP_EQ, 1);
+  tt_int_op(rs->bandwidth_kb,OP_EQ, 0);
+  tt_int_op(rs->has_guardfraction,OP_EQ, 0);
+  tt_int_op(rs->guardfraction_percentage,OP_EQ, 0);
+
+  done:
+    return;
+}
+
 /*
  * Test that dirserv_set_routerstatus_testing sets router flags correctly
  * Using "*"  sets flags on A and B
@@ -3610,6 +3640,9 @@ test_dir_dirserv_set_routerstatus_testing(void *arg)
   tt_uint_op(rs_b->is_exit, OP_EQ, 1);
   tt_uint_op(rs_b->is_possible_guard, OP_EQ, 1);
   tt_uint_op(rs_b->is_hs_dir, OP_EQ, 1);
+
+  /* Check if we are clearing the flags correctly */
+  test_clear_status_flags_on_sybil(rs_a);
 
  done:
   tor_free(mock_options);

@@ -2346,7 +2346,7 @@ dirserv_set_routerstatus_testing(routerstatus_t *rs)
  * we want to vote that way in case all the other authorities are voting
  * Running and Exit.
  */
-static void
+void
 clear_status_flags_on_sybil(routerstatus_t *rs)
 {
   routerstatus_t *rs_c = tor_malloc_zero(sizeof(struct routerstatus_t));

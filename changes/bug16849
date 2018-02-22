@@ -1,0 +1,6 @@
+  o Minor bugfix (sybil flags):
+    - Added some flags that we have forgotten to clear when they were created.
+      Fixes bug 16849; bugfix on 0.2.9.5-alpha. Patch by "ffmancera".
+  o Testing:
+    - Added a unit test of clear_status_flags_on_sybil().
+      Fixes bug 16849;
