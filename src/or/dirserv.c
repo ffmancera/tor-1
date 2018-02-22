@@ -2349,12 +2349,47 @@ dirserv_set_routerstatus_testing(routerstatus_t *rs)
 static void
 clear_status_flags_on_sybil(routerstatus_t *rs)
 {
-  rs->is_authority = rs->is_exit = rs->is_stable = rs->is_fast =
-    rs->is_flagged_running = rs->is_named = rs->is_valid =
-    rs->is_hs_dir = rs->is_v2_dir = rs->is_possible_guard = 0;
-  /* FFFF we might want some mechanism to check later on if we
-   * missed zeroing any flags: it's easy to add a new flag but
-   * forget to add it to this clause. */
+  routerstatus_t *rs_c = tor_malloc_zero(sizeof(struct routerstatus_t));
+
+  /* Copy the not-clear fields */
+  rs_c->published_on = rs->published_on;
+  strncpy(rs_c->nickname, rs->nickname, MAX_NICKNAME_LEN+1);
+  strncpy(rs_c->identity_digest, rs->identity_digest,
+          DIGEST_LEN);
+  strncpy(rs_c->descriptor_digest, rs->descriptor_digest,
+          DIGEST256_LEN);
+  rs_c->addr = rs->addr;
+  rs_c->or_port = rs->or_port;
+  rs_c->dir_port = rs->dir_port;
+  rs_c->ipv6_addr = rs->ipv6_addr;
+  rs_c->ipv6_orport = rs->ipv6_orport;
+  rs_c->pv = rs->pv;
+  rs_c->exitsummary = rs->exitsummary;
+  rs_c->last_dir_503_at = rs->last_dir_503_at;
+  rs_c->dl_status = rs->dl_status;
+
+  /* Set rs to zero */
+  memset(rs, 0x00, sizeof(struct routerstatus_t));
+
+  /* Copy the not-clear fields back */
+  rs->bw_is_unmeasured = 1;
+  rs->published_on = rs_c->published_on;
+  strncpy(rs->nickname, rs_c->nickname, MAX_NICKNAME_LEN+1);
+  strncpy(rs->identity_digest, rs_c->identity_digest,
+          DIGEST_LEN);
+  strncpy(rs->descriptor_digest, rs_c->descriptor_digest,
+          DIGEST256_LEN);
+  rs->addr = rs_c->addr;
+  rs->or_port = rs_c->or_port;
+  rs->dir_port = rs_c->dir_port;
+  rs->ipv6_addr = rs_c->ipv6_addr;
+  rs->ipv6_orport = rs_c->ipv6_orport;
+  rs->pv = rs_c->pv;
+  rs->exitsummary = rs_c->exitsummary;
+  rs->last_dir_503_at = rs_c->last_dir_503_at;
+  rs->dl_status = rs_c->dl_status;
+
+  tor_free(rs_c);
 }
 
 /** The guardfraction of the guard with identity fingerprint <b>guard_id</b>
