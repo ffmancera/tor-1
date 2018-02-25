@@ -142,6 +142,9 @@ circuit_is_acceptable(const origin_circuit_t *origin_circ,
     if (circ->timestamp_dirty &&
        circ->timestamp_dirty+get_options()->MaxCircuitDirtiness <= now)
       return 0;
+    if (origin_circ->n_read_circ_bw + origin_circ->n_written_circ_bw >
+        get_options()->MaxCircuitSizeDirtiness)
+      return 0;
   }
 
   if (origin_circ->unusable_for_new_conns)
@@ -1037,6 +1040,9 @@ circuit_stream_is_being_handled(entry_connection_t *conn,
     if (CIRCUIT_IS_ORIGIN(circ) &&
         !circ->marked_for_close &&
         circ->purpose == CIRCUIT_PURPOSE_C_GENERAL &&
+        (TO_ORIGIN_CIRCUIT(circ)->n_read_circ_bw +
+         TO_ORIGIN_CIRCUIT(circ)->n_written_circ_bw <
+         get_options()->MaxCircuitSizeDirtiness) &&
         (!circ->timestamp_dirty ||
          circ->timestamp_dirty + get_options()->MaxCircuitDirtiness > now)) {
       origin_circuit_t *origin_circ = TO_ORIGIN_CIRCUIT(circ);
@@ -1475,9 +1481,12 @@ circuit_expire_old_circuits_clientside(void)
     /* If the circuit has been dirty for too long, and there are no streams
      * on it, mark it for close.
      */
-    if (circ->timestamp_dirty &&
+    if (((circ->timestamp_dirty &&
         circ->timestamp_dirty + get_options()->MaxCircuitDirtiness <
-          now.tv_sec &&
+          now.tv_sec) ||
+        TO_ORIGIN_CIRCUIT(circ)->n_read_circ_bw +
+        TO_ORIGIN_CIRCUIT(circ)->n_written_circ_bw >
+        get_options()->MaxCircuitSizeDirtiness) &&
         !TO_ORIGIN_CIRCUIT(circ)->p_streams /* nothing attached */ ) {
       log_debug(LD_CIRC, "Closing n_circ_id %u (dirty %ld sec ago, "
                 "purpose %d)",
