@@ -433,6 +433,7 @@ static config_var_t option_vars_[] = {
   VAR("MapAddress",              LINELIST, AddressMap,           NULL),
   V(MaxAdvertisedBandwidth,      MEMUNIT,  "1 GB"),
   V(MaxCircuitDirtiness,         INTERVAL, "10 minutes"),
+  V(MaxCircuitSizeDirtiness,     MEMUNIT,  "10MB"),
   V(MaxClientCircuitsPending,    UINT,     "32"),
   V(MaxConsensusAgeForDiffs,     INTERVAL, "0 seconds"),
   VAR("MaxMemInQueues",          MEMUNIT,   MaxMemInQueues_raw, "0"),
@@ -3088,9 +3089,17 @@ compute_publishserverdescriptor(or_options_t *options)
  * will generate too many circuits and potentially overload the network. */
 #define MIN_MAX_CIRCUIT_DIRTINESS 10
 
+/** Lowest allowable value for MaxCircuitSizeDirtiness; if this is too low, Tor
+ * will generate too many circuits and potentially overload the network. */
+#define MIN_MAX_CIRCUIT_SIZE_DIRTINESS 50
+
 /** Highest allowable value for MaxCircuitDirtiness: prevents time_t
  * overflows. */
 #define MAX_MAX_CIRCUIT_DIRTINESS (30*24*60*60)
+
+/** Highest allowable value for MaxCircuitSizeDirtiness: prevents size_t
+ * overflows. */
+#define MAX_MAX_CIRCUIT_SIZE_DIRTINESS (1*1000*1000*1000)
 
 /** Lowest allowable value for CircuitStreamTimeout; if this is too low, Tor
  * will generate too many circuits and potentially overload the network. */
@@ -3905,6 +3914,20 @@ options_validate(or_options_t *old_options, or_options_t *options,
     log_warn(LD_CONFIG, "MaxCircuitDirtiness option is too high; "
              "setting to %d days.", MAX_MAX_CIRCUIT_DIRTINESS/86400);
     options->MaxCircuitDirtiness = MAX_MAX_CIRCUIT_DIRTINESS;
+  }
+
+  if (options->MaxCircuitSizeDirtiness < MIN_MAX_CIRCUIT_SIZE_DIRTINESS) {
+    log_warn(LD_CONFIG, "MaxCircuitSizeDirtiness option is too short; "
+             "raising to %d bytes.",
+             MIN_MAX_CIRCUIT_SIZE_DIRTINESS);
+    options->MaxCircuitSizeDirtiness = MIN_MAX_CIRCUIT_SIZE_DIRTINESS;
+  }
+
+  if (options->MaxCircuitSizeDirtiness > MAX_MAX_CIRCUIT_SIZE_DIRTINESS) {
+    log_warn(LD_CONFIG, "MaxCircuitSizeDirtiness option is too high; "
+             "setting to %d bytes.",
+             MAX_MAX_CIRCUIT_SIZE_DIRTINESS);
+    options->MaxCircuitSizeDirtiness = MAX_MAX_CIRCUIT_SIZE_DIRTINESS;
   }
 
   if (options->CircuitStreamTimeout &&

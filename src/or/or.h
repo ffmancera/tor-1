@@ -4011,6 +4011,8 @@ typedef struct {
                          * a new one? */
   int MaxCircuitDirtiness; /**< Never use circs that were first used more than
                                 this interval ago. */
+  size_t MaxCircuitSizeDirtiness; /**< Never use circs that their traffic has
+                                       exceeded this threshold */
   uint64_t BandwidthRate; /**< How much bandwidth, on average, are we willing
                            * to use in a second? */
   uint64_t BandwidthBurst; /**< How much bandwidth, at maximum, are we willing
