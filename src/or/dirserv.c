@@ -2354,9 +2354,9 @@ clear_status_flags_on_sybil(routerstatus_t *rs)
   /* Copy the not-clear fields */
   rs_c->published_on = rs->published_on;
   strncpy(rs_c->nickname, rs->nickname, MAX_NICKNAME_LEN+1);
-  strncpy(rs_c->identity_digest, rs->identity_digest,
+  memcpy(rs_c->identity_digest, rs->identity_digest,
           DIGEST_LEN);
-  strncpy(rs_c->descriptor_digest, rs->descriptor_digest,
+  memcpy(rs_c->descriptor_digest, rs->descriptor_digest,
           DIGEST256_LEN);
   rs_c->addr = rs->addr;
   rs_c->or_port = rs->or_port;
@@ -2374,10 +2374,10 @@ clear_status_flags_on_sybil(routerstatus_t *rs)
   /* Copy the not-clear fields back */
   rs->bw_is_unmeasured = 1;
   rs->published_on = rs_c->published_on;
-  strncpy(rs->nickname, rs_c->nickname, MAX_NICKNAME_LEN+1);
-  strncpy(rs->identity_digest, rs_c->identity_digest,
+  strlcpy(rs->nickname, rs_c->nickname, sizeof(rs->nickname));
+  memcpy(rs->identity_digest, rs_c->identity_digest,
           DIGEST_LEN);
-  strncpy(rs->descriptor_digest, rs_c->descriptor_digest,
+  memcpy(rs->descriptor_digest, rs_c->descriptor_digest,
           DIGEST256_LEN);
   rs->addr = rs_c->addr;
   rs->or_port = rs_c->or_port;
