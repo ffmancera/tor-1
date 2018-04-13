@@ -11,8 +11,10 @@
 #include "config.h"
 #include "circuitlist.h"
 #include "circuituse.h"
+#define CIRCUITBUILD_PRIVATE
 #include "circuitbuild.h"
 #include "nodelist.h"
+#include "fakechans.h"
 
 static void
 test_circuit_is_available_for_use_ret_false_when_marked_for_close(void *arg)
@@ -40,6 +42,32 @@ test_circuit_is_available_for_use_ret_false_when_timestamp_dirty(void *arg)
 
   done:
     tor_free(circ);
+}
+
+static void
+test_circuit_should_cannibalize_rp(void *arg)
+{
+  (void)arg;
+  channel_t *nchan = NULL;
+
+  /* Make fake channels */
+  nchan = new_fake_channel();
+  tt_assert(nchan);
+
+  origin_circuit_t *or_circ = origin_circuit_new();
+  or_circ->base_.n_chan = nchan;
+  or_circ->base_.purpose = CIRCUIT_PURPOSE_C_ESTABLISH_REND;
+  or_circ->base_.n_circ_id = get_unique_circ_id_by_chan(nchan);
+
+  origin_circuit_t *new_circ = circuit_launch_by_extend_info(
+                                 CIRCUIT_PURPOSE_C_ESTABLISH_REND,
+                                 NULL,
+                                 CIRCLAUNCH_IS_INTERNAL);
+
+  tt_ptr_op(&or_circ->base_.n_circ_id, OP_EQ, &new_circ->base_.n_circ_id);
+
+  done: ;
+
 }
 
 static void
@@ -248,6 +276,10 @@ struct testcase_t circuituse_tests[] = {
  },
  { "timestamp",
    test_circuit_is_available_for_use_ret_false_when_timestamp_dirty,
+   TT_FORK, NULL, NULL
+ },
+ { "rp_cannibalize",
+   test_circuit_should_cannibalize_rp,
    TT_FORK, NULL, NULL
  },
  { "non_general",
